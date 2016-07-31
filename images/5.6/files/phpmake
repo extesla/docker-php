@@ -1,0 +1,120 @@
+#!/bin/sh
+set -e
+
+#: ==========================================================================
+#: Variables
+#: ==========================================================================
+
+#: By default, assume we're installing to the /etc/php/cli directory.
+PHP_CONFIG_DIR=/etc/php/cli
+
+#: The PHP config will be whatever the user (may) have specified for
+#: extra configuration values, plus whatever they specify during the
+#: invocation of this script.
+PHP_CONFIG_OPTION="$PHP_EXTRA_CONFIGURE_ARGS"
+
+#: ==========================================================================
+#: Help / Utility
+#: ==========================================================================
+
+usage() {
+  echo "phpmake ver. $PHP_VERSION"
+  echo
+  echo "Usage: $0 [options]"
+  echo
+  echo "Configure, build, and install PHP to the specified directory"
+  echo "with the given configuration."
+  echo
+  echo "Options:"
+	echo "  -o, --option         configuration option, e.g. --with-curl"
+  echo "      --help           display this help and exit"
+	echo
+}
+
+#: <summary>
+#: Parse the command line options.
+#: </summary>
+parse() {
+  opts="$(getopt -o 'o:,v' --long 'option:,help' -- "$@" || { usage >&2 && false; })"
+  eval set -- "$opts"
+
+  while true; do
+    #: Read the positional argument $1 into the variable flags
+    flag="$1" && shift
+    case "$flag" in
+      -o|--option)
+        PHP_CONFIG_OPTION="$PHP_CONFIG_OPTION $1" && shift
+      ;;
+      # -d|--dir)
+      #   PHP_DIR="$1" && shift
+      # ;;
+      --help)
+        usage && exit 0
+      ;;
+      --)
+        break
+      ;;
+      *)
+        {
+          echo "error: unknown flag: $flag"
+          usage
+        } >&2
+        exit 1
+      ;;
+    esac
+  done
+}
+
+#: ==========================================================================
+#: Functions
+#: ==========================================================================
+
+#: <summary>
+#: Add runtime dependencies.
+#: </summary>
+do_add_run_dependencies() {
+  echo "adding run dependencies:"
+  run_dependencies="$( \
+      scanelf --needed --nobanner --recursive /usr/local \
+         | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+         | sort -u \
+         | xargs -r apk info --installed \
+         | sort -u \
+      )"
+  apk add --virtual .php-rundeps $run_dependencies
+  echo "added dependencies: $run_dependencies"
+}
+
+do_configure() {
+  echo "configuring php:"
+  echo "+ /usr/src/php/configure $PHP_CONFIG_OPTION"
+  /usr/src/php/configure $PHP_CONFIG_OPTION
+}
+
+#: <summary>
+#: </summary>
+do_make() {
+  echo "making php:"
+  make -j"$(getconf _NPROCESSORS_ONLN)"
+  make install && { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; }
+  make clean
+}
+
+
+#: ==========================================================================
+#: Main
+#: ==========================================================================
+
+main() {
+  echo "installing php from source"
+  parse $@
+
+  do_configure
+  do_make
+  do_add_run_dependencies
+}
+
+#: Invoke either the usage() function or the main function.
+#:
+#: Call usage() if a command was not supplied, otherwise main().
+if [ $# -eq 0 ]; then usage; else main $@; fi
