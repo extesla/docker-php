@@ -56,9 +56,9 @@ RUN mkdir -p /var/www \
 ENV GPG_KEYS 1A4E8B7277C42E53DBA9C7B9BCAA30EA9C0D5763
 
 #: PHP Version
-ENV PHP_VERSION 7.0.9
-ENV PHP_FILENAME php-7.0.9.tar.xz
-ENV PHP_SHA256 970c322ba3e472cb0264b8ba9d4d92e87918da5d0cca53c4aba2a70545b8626d
+ENV PHP_VERSION 7.0.13
+ENV PHP_FILENAME php-7.0.13.tar.xz
+ENV PHP_SHA256 357ba7f93975d7d836abed0852dc3ed96a988af539e87750613294cbee82f1bf
 
 RUN set -xe \
  && curl -fSL "http://php.net/get/$PHP_FILENAME/from/this/mirror" -o "$PHP_FILENAME" \
@@ -146,34 +146,53 @@ RUN set -xe \
       cp php-fpm.conf.default php-fpm.d/www.conf; \
       { \
         echo '[global]'; \
+        echo 'pid=/var/run/php-fpm.pid'; \
         echo 'include=/etc/php/php-fpm.d/*.conf'; \
       } | tee php-fpm.conf; \
     fi \
  && { \
-      echo '[global]'; \
-      echo 'error_log = /proc/self/fd/2'; \
-      echo; \
       echo '[www]'; \
+      echo 'user = www-data'; \
+      echo 'group = www-data'; \
+      echo; \
       echo '; if we send this to /proc/self/fd/1, it never appears'; \
       echo 'access.log = /proc/self/fd/2'; \
       echo; \
       echo 'clear_env = no'; \
       echo; \
+      echo 'listen = /run/php-fpm.sock'; \
+      echo 'listen.owner = www-data'; \
+      echo 'listen.group = www-data'; \
+      echo; \
+      echo 'pm = ondemand'; \
+      echo 'pm.process_idle_timeout = 30s'; \
+      echo 'pm.max_children = 10'; \
+      echo 'pm.status_path = /status'; \
+      echo; \
+      echo 'ping.path = /ping'; \
+      echo 'ping.response = pong'; \
+      echo; \
       echo '; Ensure worker stdout and stderr are sent to the main error log.'; \
       echo 'catch_workers_output = yes'; \
+     } | tee php-fpm.d/www.conf \
+ && { \
+      echo '[global]'; \
+      echo 'error_log = /proc/self/fd/2'; \
     } | tee php-fpm.d/docker.conf \
  && { \
       echo '[global]'; \
       echo 'daemonize = no'; \
-      echo; \
-      echo '[www]'; \
-      echo 'listen = [::]:9000'; \
     } | tee php-fpm.d/zz-docker.conf
 
 WORKDIR /
 
 #: Clear the APK cache before we finish.
 RUN rm -rf /var/cache/apk/*
+
+#: Copy init.d script (its a modified version of what is available under the
+#: PHP source: /usr/src/sapi/fpm/init.d.php-fpm)
+COPY files/etc/init.d/php-fpm /etc/init.d/php-fpm
+RUN chmod +x /etc/init.d/php-fpm
 
 #: Enable additional extensions
 COPY files/etc/php/mods-available /etc/php/mods-available
