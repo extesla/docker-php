@@ -63,7 +63,7 @@ ENV PHP_SHA256 af70a33b3f7a51510467199b39af151333fbbe4cc21923bad9c7cf64268cddb2
 RUN set -xe \
  && curl -fSL "http://php.net/get/$PHP_FILENAME/from/this/mirror" -o "$PHP_FILENAME" \
  && echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c - \
- && curl -fSL "http://php.net/get/$PHP_FILENAME.asc/from/this/mirror" -o "$PHP_FILENAME.asc" \
+ && curl -fSL "http://php.net/distributions/$PHP_FILENAME.asc" -o "$PHP_FILENAME.asc" \
  && export GNUPGHOME="$(mktemp -d)" \
  && for key in $GPG_KEYS; do \
       gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
