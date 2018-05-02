@@ -53,7 +53,7 @@ RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
 RUN mkdir -p /var/www \
  && chown -R www-data:www-data /var/www
 
-ENV GPG_KEYS 1A4E8B7277C42E53DBA9C7B9BCAA30EA9C0D5763
+ENV GPG_KEYS A917B1ECDA84AEC2B568FED6F50ABC807BD5DCD0
 
 #: PHP Version
 ENV PHP_VERSION 7.1.17
