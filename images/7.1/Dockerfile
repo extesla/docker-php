@@ -53,12 +53,14 @@ RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
 RUN mkdir -p /var/www \
  && chown -R www-data:www-data /var/www
 
-ENV GPG_KEYS A917B1ECDA84AEC2B568FED6F50ABC807BD5DCD0
+ENV GPG_KEYS A917B1ECDA84AEC2B568FED6F50ABC807BD5DCD0 528995BFEDFBA7191D46839EF9BA0ADA31CBD89E 1729F83938DA44E27BA0F4D3DBDB397470D12172
 
 #: PHP Version
 ENV PHP_VERSION 7.1.17
 ENV PHP_FILENAME php-7.1.17.tar.xz
-ENV PHP_SHA256 1a784806866e06367f7a5c88775d239d6f30041c7ce65a8232d03a3d4de56d56
+ENV PHP_URL "https://secure.php.net/get/${PHP_FILENAME}/from/this/mirror"
+ENV PHP_ASC_URL "https://secure.php.net/get/${PHP_FILENAME}.asc/from/this/mirror"
+ENV PHP_SHA256 a5d67e477248a3911af7ef85c8400c1ba8cd632184186fd31070b96714e669f1
 
 RUN set -xe \
  && curl -fSL "http://php.net/distributions/$PHP_FILENAME" -o "$PHP_FILENAME" \
@@ -68,7 +70,7 @@ RUN set -xe \
  && for key in $GPG_KEYS; do \
       gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
     done \
- && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
+ && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME"; \
  && rm -r "$GNUPGHOME" "$PHP_FILENAME.asc"
 
 RUN mkdir -p /usr/src \
