@@ -61,7 +61,7 @@ ENV PHP_FILENAME php-7.0.30.tar.xz
 ENV PHP_SHA256 c90892fb68ab9b8476519658d3f78f6388f2609ae1309bdc2a2e1cc9f92dd686
 
 RUN set -xe \
- && curl -fSL "http://php.net/get/$PHP_FILENAME/from/this/mirror" -o "$PHP_FILENAME" \
+ && curl -fSL "http://php.net/distributions/$PHP_FILENAME" -o "$PHP_FILENAME" \
  && echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c - \
  && curl -fSL "http://php.net/distributions/$PHP_FILENAME.asc" -o "$PHP_FILENAME.asc" \
  && export GNUPGHOME="$(mktemp -d)" \
