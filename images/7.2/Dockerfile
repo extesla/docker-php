@@ -21,7 +21,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM extesla/alpine
+FROM extesla/alpine:3.7
 MAINTAINER "Sean Quinn <sean.quinn@extesla.com>"
 
 RUN apk update && apk upgrade
@@ -63,14 +63,14 @@ ENV PHP_ASC_URL "https://secure.php.net/get/${PHP_FILENAME}.asc/from/this/mirror
 ENV PHP_SHA256 af70a33b3f7a51510467199b39af151333fbbe4cc21923bad9c7cf64268cddb2
 
 RUN set -xe \
-  && curl -fSL "PHP_URL" -o "$PHP_FILENAME" \
+ && wget -O "$PHP_FILENAME" "$PHP_URL" \
  && echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c - \
-  && curl -fSL "$PHP_ASC_URL" -o "$PHP_FILENAME.asc" \
+ && wget -O "$PHP_FILENAME.asc" "$PHP_ASC_URL" \
  && export GNUPGHOME="$(mktemp -d)" \
  && for key in $GPG_KEYS; do \
       gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
     done \
- && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME"; \
+ && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
  && rm -r "$GNUPGHOME" "$PHP_FILENAME.asc"
 
 RUN mkdir -p /usr/src \

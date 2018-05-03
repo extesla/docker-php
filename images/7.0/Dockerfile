@@ -53,7 +53,7 @@ RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
 RUN mkdir -p /var/www \
  && chown -R www-data:www-data /var/www
 
-ENV GPG_KEYS 1A4E8B7277C42E53DBA9C7B9BCAA30EA9C0D5763
+ENV GPG_KEYS 1A4E8B7277C42E53DBA9C7B9BCAA30EA9C0D5763 6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3
 
 #: PHP Version
 ENV PHP_VERSION 7.0.30
@@ -61,9 +61,9 @@ ENV PHP_FILENAME php-7.0.30.tar.xz
 ENV PHP_SHA256 c90892fb68ab9b8476519658d3f78f6388f2609ae1309bdc2a2e1cc9f92dd686
 
 RUN set -xe \
- && curl -fSL "http://php.net/distributions/$PHP_FILENAME" -o "$PHP_FILENAME" \
+ && wget -O "$PHP_FILENAME" "$PHP_URL" \
  && echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c - \
- && curl -fSL "http://php.net/distributions/$PHP_FILENAME.asc" -o "$PHP_FILENAME.asc" \
+ && wget -O "$PHP_FILENAME.asc" "$PHP_ASC_URL" \
  && export GNUPGHOME="$(mktemp -d)" \
  && for key in $GPG_KEYS; do \
       gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
