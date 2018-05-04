@@ -68,7 +68,9 @@ RUN set -xe \
  && wget -O "$PHP_FILENAME.asc" "$PHP_ASC_URL" \
  && export GNUPGHOME="$(mktemp -d)" \
  && for key in $GPG_KEYS; do \
-      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+      gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
+      gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
+      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
     done \
  && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
  && rm -r "$GNUPGHOME" "$PHP_FILENAME.asc"
