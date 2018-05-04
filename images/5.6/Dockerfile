@@ -72,7 +72,7 @@ RUN set -xe \
       gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
     done \
  && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
- && rm -r /tmp/gnupg "$PHP_FILENAME.asc"
+ && rm -rf /tmp/gnupg "$PHP_FILENAME.asc"
 
 RUN mkdir -p /usr/src \
  && tar -Jxf "$PHP_FILENAME" -C /usr/src \
