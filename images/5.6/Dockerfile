@@ -64,12 +64,15 @@ RUN set -xe \
  && curl -fSL "http://php.net/get/$PHP_FILENAME/from/this/mirror" -o "$PHP_FILENAME" \
  && echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c - \
  && curl -fSL "http://php.net/get/$PHP_FILENAME.asc/from/this/mirror" -o "$PHP_FILENAME.asc" \
- && export GNUPGHOME="$(mktemp -d)" \
+ && mkdir -p /tmp/gnupg \
+ && export GNUPGHOME="$(mktemp -d -p /tmp/gnupg)" \
  && for key in $GPG_KEYS; do \
-      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+      gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
+      gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
+      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
     done \
  && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
- && rm -r "$GNUPGHOME" "$PHP_FILENAME.asc"
+ && rm -r /tmp/gnupg "$PHP_FILENAME.asc"
 
 RUN mkdir -p /usr/src \
  && tar -Jxf "$PHP_FILENAME" -C /usr/src \

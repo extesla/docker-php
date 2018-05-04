@@ -66,14 +66,15 @@ RUN set -xe \
  && wget -O "$PHP_FILENAME" "$PHP_URL" \
  && echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c - \
  && wget -O "$PHP_FILENAME.asc" "$PHP_ASC_URL" \
- && export GNUPGHOME="$(mktemp -d)" \
+ && mkdir -p /tmp/gnupg \
+ && export GNUPGHOME="$(mktemp -d -p /tmp/gnupg)" \
  && for key in $GPG_KEYS; do \
       gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
       gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
       gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
     done \
  && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
- && rm -r "$GNUPGHOME" "$PHP_FILENAME.asc"
+ && rm -r /tmp/gnupg "$PHP_FILENAME.asc"
 
 RUN mkdir -p /usr/src \
  && tar -Jxf "$PHP_FILENAME" -C /usr/src \
