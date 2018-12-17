@@ -26,14 +26,14 @@ MAINTAINER "Sean Quinn <sean.quinn@extesla.com>"
 
 RUN apk update && apk upgrade
 RUN apk add --no-cache --virtual .phpize-deps \
-            autoconf file g++ gcc libc-dev make pkgconf re2c
-RUN apk add --no-cache --virtual .php-deps \
+            autoconf file g++ gcc libc-dev make pkgconf \
+ && apk add --no-cache --virtual .php-deps \
             bzip2 ca-certificates curl gdbm gettext icu icu-libs \
-            libdbi libedit libintl libmcrypt libpng libxml2 libxslt \
-            openssl re2c
-RUN apk add --no-cache --virtual .build-deps \
+            libdbi libedit libintl libmcrypt libpng libpng-dev \
+            libxml2 libxslt openssl re2c \
+ && apk add --no-cache --virtual .build-deps \
             bzip2-dev curl-dev gdbm-dev gettext-dev gnupg icu-dev \
-            libdbi-dev libedit-dev libmcrypt-dev libpng-dev libxml2-dev \
+            libdbi-dev libedit-dev libmcrypt-dev libxml2-dev \
             libxslt-dev openssl-dev
 
 #: Create the www-data user if it doesn't exist with gid/uid 82.
@@ -56,11 +56,11 @@ RUN mkdir -p /var/www \
 ENV GPG_KEYS A917B1ECDA84AEC2B568FED6F50ABC807BD5DCD0 528995BFEDFBA7191D46839EF9BA0ADA31CBD89E 1729F83938DA44E27BA0F4D3DBDB397470D12172
 
 #: PHP Version
-ENV PHP_VERSION 7.1.17
-ENV PHP_FILENAME php-7.1.17.tar.xz
+ENV PHP_VERSION 7.1.25
+ENV PHP_FILENAME php-7.1.25.tar.xz
 ENV PHP_URL "https://secure.php.net/get/${PHP_FILENAME}/from/this/mirror"
 ENV PHP_ASC_URL "https://secure.php.net/get/${PHP_FILENAME}.asc/from/this/mirror"
-ENV PHP_SHA256 a5d67e477248a3911af7ef85c8400c1ba8cd632184186fd31070b96714e669f1
+ENV PHP_SHA256 0fd8dad1903cd0b2d615a1fe4209f99e53b7292403c8ffa1919c0f4dd1eada88
 
 RUN set -xe \
  && wget -O "$PHP_FILENAME" "$PHP_URL" \
@@ -131,9 +131,10 @@ RUN /phpmake -o --with-config-file-path="$PHP_INI_DIR" \
              -o --with-openssl \
              -o --with-readline \
              -o --with-zlib \
-             -o --with-xsl
-#RUN docker-php-ext-install curl gd json mcrypt readline
-RUN cp /usr/src/php/php.ini-production /etc/php/php.ini
+             -o --with-xsl \
+ && apk del .build-deps \
+ && rm -rf /var/cache/apk/* \
+ && cp /usr/src/php/php.ini-production /etc/php/php.ini
 
 #: ==========================================================================
 #: PHP FPM Configuration

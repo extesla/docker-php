@@ -26,14 +26,14 @@ MAINTAINER "Sean Quinn <sean.quinn@extesla.com>"
 
 RUN apk update && apk upgrade
 RUN apk add --no-cache --virtual .phpize-deps \
-            autoconf file g++ gcc libc-dev make pkgconf re2c
-RUN apk add --no-cache --virtual .php-deps \
+            autoconf file g++ gcc libc-dev make pkgconf \
+ && apk add --no-cache --virtual .php-deps \
             bzip2 ca-certificates curl gdbm gettext icu icu-libs \
-            libdbi libedit libintl libmcrypt libpng libxml2 libxslt \
-            openssl re2c
-RUN apk add --no-cache --virtual .build-deps \
+            libdbi libedit libintl libmcrypt libpng libpng-dev \
+            libxml2 libxslt openssl re2c \
+ && apk add --no-cache --virtual .build-deps \
             bzip2-dev curl-dev gdbm-dev gettext-dev gnupg icu-dev \
-            libdbi-dev libedit-dev libmcrypt-dev libpng-dev libxml2-dev \
+            libdbi-dev libedit-dev libmcrypt-dev libxml2-dev \
             libxslt-dev openssl-dev
 
 #: Create the www-data user if it doesn't exist with gid/uid 82.
@@ -47,20 +47,19 @@ RUN apk add --no-cache --virtual .build-deps \
 #:   http://git.alpinelinux.org/cgit/aports/tree/main/nginx-initscripts/nginx-initscripts.pre-install?h=v3.3.2
 RUN set -x \
  && addgroup -g 82 -S www-data \
- && adduser -u 82 -D -S -G www-data www-data
-RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
-
-RUN mkdir -p /var/www \
+ && adduser -u 82 -D -S -G www-data www-data \
+ && echo "www-data ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers \
+ && mkdir -p /var/www \
  && chown -R www-data:www-data /var/www
 
-ENV GPG_KEYS 1729F83938DA44E27BA0F4D3DBDB397470D12172 B1B44D8F021E4E2D6021E995DC9FF8D3EE5AF27F
+ENV GPG_KEYS="1729F83938DA44E27BA0F4D3DBDB397470D12172 B1B44D8F021E4E2D6021E995DC9FF8D3EE5AF27F"
 
 #: PHP Version
-ENV PHP_VERSION 7.2.5
-ENV PHP_FILENAME php-7.2.5.tar.xz
+ENV PHP_VERSION 7.2.12
+ENV PHP_FILENAME php-7.2.12.tar.xz
 ENV PHP_URL "https://secure.php.net/get/${PHP_FILENAME}/from/this/mirror"
 ENV PHP_ASC_URL "https://secure.php.net/get/${PHP_FILENAME}.asc/from/this/mirror"
-ENV PHP_SHA256 af70a33b3f7a51510467199b39af151333fbbe4cc21923bad9c7cf64268cddb2
+ENV PHP_SHA256 989c04cc879ee71a5e1131db867f3c5102f1f7565f805e2bb8bde33f93147fe1
 
 RUN set -xe \
  && wget -O "$PHP_FILENAME" "$PHP_URL" \
@@ -131,9 +130,10 @@ RUN /phpmake -o --with-config-file-path="$PHP_INI_DIR" \
              -o --with-openssl \
              -o --with-readline \
              -o --with-zlib \
-             -o --with-xsl
-#RUN docker-php-ext-install curl gd json mcrypt readline
-RUN cp /usr/src/php/php.ini-production /etc/php/php.ini
+             -o --with-xsl \
+ && apk del .build-deps \
+ && rm -rf /var/cache/apk/* \
+ && cp /usr/src/php/php.ini-production /etc/php/php.ini
 
 #: ==========================================================================
 #: PHP FPM Configuration

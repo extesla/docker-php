@@ -26,14 +26,14 @@ MAINTAINER "Sean Quinn <sean.quinn@extesla.com>"
 
 RUN apk update && apk upgrade
 RUN apk add --no-cache --virtual .phpize-deps \
-            autoconf file g++ gcc libc-dev make pkgconf re2c
-RUN apk add --no-cache --virtual .php-deps \
+            autoconf file g++ gcc libc-dev make pkgconf \
+ && apk add --no-cache --virtual .php-deps \
             bzip2 ca-certificates curl gdbm gettext icu icu-libs \
-            libdbi libedit libintl libmcrypt libpng libxml2 libxslt \
-            openssl re2c
-RUN apk add --no-cache --virtual .build-deps \
+            libdbi libedit libintl libmcrypt libpng libpng-dev \
+            libxml2 libxslt openssl re2c \
+ && apk add --no-cache --virtual .build-deps \
             bzip2-dev curl-dev gdbm-dev gettext-dev gnupg icu-dev \
-            libdbi-dev libedit-dev libmcrypt-dev libpng-dev libxml2-dev \
+            libdbi-dev libedit-dev libmcrypt-dev libxml2-dev \
             libxslt-dev openssl-dev
 
 #: Create the www-data user if it doesn't exist with gid/uid 82.
@@ -131,9 +131,10 @@ RUN /phpmake -o --with-config-file-path="$PHP_INI_DIR" \
              -o --with-openssl \
              -o --with-readline \
              -o --with-zlib \
-             -o --with-xsl
-#RUN docker-php-ext-install curl gd json mcrypt readline
-RUN cp /usr/src/php/php.ini-production /etc/php/php.ini
+             -o --with-xsl \
+ && apk del .build-deps \
+ && rm -rf /var/cache/apk/* \
+ && cp /usr/src/php/php.ini-production /etc/php/php.ini
 
 #: ==========================================================================
 #: PHP FPM Configuration
