@@ -70,8 +70,6 @@ RUN set -xe \
  && export GNUPGHOME="$(mktemp -d -p /tmp/gnupg)" \
  && for key in $GPG_KEYS; do \
       gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
-      gpg --batch --keyserver pgp.mit.edu --recv-keys "$GPG_KEYS"; \
-      gpg --batch --keyserver keyserver.pgp.com --recv-keys "$key" ; \
     done \
  && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
  && gpgconf --kill all \
