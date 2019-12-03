@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Extesla, LLC.
+# Copyright (c) Extesla, LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -21,8 +21,8 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM extesla/alpine
-MAINTAINER "Sean Quinn <sean.quinn@extesla.com>"
+FROM extesla/alpine:3.8
+LABEL maintainer="Sean Quinn <sean.quinn@extesla.com>"
 
 RUN apk update && apk upgrade
 RUN apk add --no-cache --virtual .phpize-deps \
@@ -30,11 +30,11 @@ RUN apk add --no-cache --virtual .phpize-deps \
  && apk add --no-cache --virtual .php-deps \
             bzip2 ca-certificates curl gdbm gettext icu icu-libs \
             libdbi libedit libintl libmcrypt libpng libpng-dev \
-            libxml2 libxslt openssl re2c \
+            libxml2 libxslt libressl re2c \
  && apk add --no-cache --virtual .build-deps \
             bzip2-dev curl-dev gdbm-dev gettext-dev gnupg icu-dev \
             libdbi-dev libedit-dev libmcrypt-dev libxml2-dev \
-            libxslt-dev openssl-dev
+            libxslt-dev libressl-dev postgresql-dev sqlite-dev
 
 #: Create the www-data user if it doesn't exist with gid/uid 82.
 #:
@@ -53,12 +53,12 @@ RUN echo "www-data ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
 RUN mkdir -p /var/www \
  && chown -R www-data:www-data /var/www
 
-ENV GPG_KEYS 6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3
+ENV GPG_KEYS 6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3 0BD78B5F97500D450838F95DFE857D9A90D90EC1
 
 #: PHP Version
-ENV PHP_VERSION 5.6.36
-ENV PHP_FILENAME php-5.6.36.tar.xz
-ENV PHP_SHA256 18f536bf548e909b4e980379d0c4e56d024b2b1eb1c9768fd169360491f1d6dd
+ENV PHP_VERSION 5.6.40
+ENV PHP_FILENAME php-5.6.40.tar.xz
+ENV PHP_SHA256 1369a51eee3995d7fbd1c5342e5cc917760e276d561595b6052b21ace2656d1c
 
 RUN set -xe \
  && curl -fSL "http://php.net/get/$PHP_FILENAME/from/this/mirror" -o "$PHP_FILENAME" \
@@ -67,12 +67,11 @@ RUN set -xe \
  && mkdir -p /tmp/gnupg \
  && export GNUPGHOME="$(mktemp -d -p /tmp/gnupg)" \
  && for key in $GPG_KEYS; do \
-      gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
-      gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
-      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
+      gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
     done \
  && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
- && rm -rf /tmp/gnupg "$PHP_FILENAME.asc"
+ && gpgconf --kill all \
+ && rm -rf "$GNUPGHOME" "$PHP_FILENAME.asc"
 
 RUN mkdir -p /usr/src \
  && tar -Jxf "$PHP_FILENAME" -C /usr/src \
