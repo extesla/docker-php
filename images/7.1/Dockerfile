@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2016 Extesla, LLC.
+# Copyright (c) Extesla, LLC.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -21,8 +21,8 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FROM extesla/alpine:3.6
-MAINTAINER "Sean Quinn <sean.quinn@extesla.com>"
+FROM extesla/alpine:3.10
+LABEL maintainer="Sean Quinn <sean.quinn@extesla.com>"
 
 RUN apk update && apk upgrade
 RUN apk add --no-cache --virtual .phpize-deps \
@@ -30,11 +30,11 @@ RUN apk add --no-cache --virtual .phpize-deps \
  && apk add --no-cache --virtual .php-deps \
             bzip2 ca-certificates curl gdbm gettext icu icu-libs \
             libdbi libedit libintl libmcrypt libpng libpng-dev \
-            libxml2 libxslt openssl re2c \
+            libxml2 libxslt libressl re2c \
  && apk add --no-cache --virtual .build-deps \
             bzip2-dev curl-dev gdbm-dev gettext-dev gnupg icu-dev \
             libdbi-dev libedit-dev libmcrypt-dev libxml2-dev \
-            libxslt-dev openssl-dev
+            libxslt-dev libressl-dev postgresql-dev sqlite-dev
 
 #: Create the www-data user if it doesn't exist with gid/uid 82.
 #:
@@ -69,12 +69,11 @@ RUN set -xe \
  && mkdir -p /tmp/gnupg \
  && export GNUPGHOME="$(mktemp -d -p /tmp/gnupg)" \
  && for key in $GPG_KEYS; do \
-      gpg --keyserver pgp.mit.edu --recv-keys "$key" || \
-      gpg --keyserver keyserver.pgp.com --recv-keys "$key" || \
-      gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
+      gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys "$key" ; \
     done \
  && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
- && rm -rf /tmp/gnupg "$PHP_FILENAME.asc"
+ && gpgconf --kill all \
+ && rm -rf "$GNUPGHOME" "$PHP_FILENAME.asc"
 
 RUN mkdir -p /usr/src \
  && tar -Jxf "$PHP_FILENAME" -C /usr/src \
@@ -129,6 +128,11 @@ RUN /phpmake -o --with-config-file-path="$PHP_INI_DIR" \
              -o --with-mcrypt \
              -o --with-mhash \
              -o --with-openssl \
+             -o --with-system-ciphers \
+             -o --with-pdo-mysql \
+             -o --with-pdo-pgsql \
+             -o --with-pdo-sqlite \
+             -o --with-pgsql \
              -o --with-readline \
              -o --with-zlib \
              -o --with-xsl \
